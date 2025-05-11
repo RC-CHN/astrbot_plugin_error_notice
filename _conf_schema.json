@@ -1,0 +1,7 @@
+{
+    "IsError_filter": {
+        "description": "是否屏蔽错误信息",
+        "type": "bool",
+        "default": true
+    }
+}
