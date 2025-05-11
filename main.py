@@ -23,15 +23,15 @@ class ErrorFilter(Star):
 
         message_str = result.get_plain_text()
         if self.Iserror_notice and message_str:  # 确保message_str不为空
-            # 扩展错误关键词检测
-            error_keywords = ['请求失败', '出错', '错误', '失败', '无法完成']
+            # 错误关键词检测
+            error_keywords = ['请求失败', '错误类型', '错误信息']
             if any(keyword in message_str for keyword in error_keywords):
-                # 给管理员发通知（新增的核心代码）
+                # 给管理员发通知
                 for admin_id in self.admins_id:
-                    if str(admin_id).isdigit():  # 确保是合法QQ号
+                    if str(admin_id).isdigit():  # 管理员QQ号
                         await event.bot.send_private_msg(
                             user_id=int(admin_id),
-                            message=f"机器人出现错误：{message_str}"  # 发送原始                                                                       错误内容
+                            message=f"主人，我出现错误了：{message_str}"  # 发送原始错误内容
                         )
 
                 logger.info(f"拦截错误消息: {message_str}")
