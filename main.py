@@ -6,7 +6,7 @@ from astrbot.api import logger
 from astrbot.api.provider import LLMResponse
 from openai.types.chat.chat_completion import ChatCompletion
 
-@register("error_notice", "DragonEmpery", "屏蔽机器人的错误信息回复，并发送给管理员。", "1.0.0")
+@register("error_notice", "DragonEmpery", "屏蔽机器人的错误信息回复，并发送给管理员。", "1.0.1")
 class ErrorFilter(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -24,7 +24,7 @@ class ErrorFilter(Star):
         message_str = result.get_plain_text()
         if self.Iserror_notice and message_str:  # 确保message_str不为空
             # 错误关键词检测
-            error_keywords = ['请求失败', '错误类型', '错误信息']
+            error_keywords = ['请求失败', '错误类型', '错误信息', '调用失败', '处理失败', '描述失败', '获取模型列表失败']
             if any(keyword in message_str for keyword in error_keywords):
                 # 给管理员发通知
                 for admin_id in self.admins_id:
