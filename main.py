@@ -7,7 +7,7 @@ from astrbot.api.provider import LLMResponse
 from openai.types.chat.chat_completion import ChatCompletion
 import traceback
 
-@register("error_notice", "DragonEmpery", "屏蔽机器人的错误信息回复，并发送给管理员。", "1.0.2")
+@register("error_notice", "DragonEmpery", "屏蔽机器人的错误信息回复，并发送给管理员。", "1.0.3")
 class ErrorFilter(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -80,7 +80,7 @@ class ErrorFilter(Star):
                             # Include group_name in the message
                             await event.bot.send_private_msg(
                                 user_id=int(admin_id),
-                                message=f"主人，我在群聊 '{group_name}'（{chat_id}）中出现错误了，来自[{user_name}]: {message_str}" if chat_type == "群聊" else f"主人，我在私聊（{chat_id}）中出现错误了，来自[{user_name}]: {message_str}"
+                                message=f"主人，我在群聊 {group_name}（{chat_id}） 中和 [{user_name}] 聊天出现错误了: {message_str}" if chat_type == "群聊" else f"主人，我在和 {user_name}（{chat_id}） 私聊时出现错误了: {message_str}"
                             )
                 except Exception as e:
                      logger.error(f"Error while sending message to admin: {e}")
