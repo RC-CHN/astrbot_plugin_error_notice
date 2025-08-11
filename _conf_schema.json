@@ -1,7 +1,12 @@
 {
-    "IsError_filter": {
-        "description": "是否屏蔽错误信息",
+    "Iserror_notice": {
+        "description": "是否屏蔽错误信息并通知管理员",
         "type": "bool",
         "default": true
+    },
+    "target_umo": {
+        "description": "通知ID",
+        "type": "list",
+        "hint": "接收错误转移通知的用户或群组 ID ,可以使用/sid命令获取"
     }
 }

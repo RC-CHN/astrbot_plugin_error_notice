@@ -1,4 +1,6 @@
 import re
+import astrbot.core.message.components as Comp
+from astrbot.core.message.message_event_result import MessageChain
 from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
 from astrbot.api.platform import AstrBotMessage
 from astrbot.api.star import Context, Star, register
@@ -13,8 +15,13 @@ class ErrorFilter(Star):
         super().__init__(context)
         self.config = config
         self.Iserror_notice = self.config.get('Iserror_notice', True)
-        # 管理员列表
-        self.admins_id: list = context.get_config().get("admins_id", [])
+        # 通知目标列表
+        self.target_umos: list[str] = []
+        target_umo_config = self.config.get("target_umo")
+        if isinstance(target_umo_config, list) and target_umo_config:
+            self.target_umos = target_umo_config
+        else:
+            logger.error("Error Notice: 配置中的 'target_umo' 不是一个有效的列表或为空，插件将无法发送错误通知。")
 
     @filter.on_decorating_result()
     async def on_decorating_result(self, event: AstrMessageEvent):
@@ -66,24 +73,32 @@ class ErrorFilter(Star):
                     formatted_traceback = traceback.format_exc()  # Capture traceback locally if any error occurs
 
                 # 给管理员发通知
-                try: #Catch exceptions while sending message to admin.
-                    for admin_id in self.admins_id:
-                        if str(admin_id).isdigit():  # 管理员QQ号
-                            # Capture traceback information
-                            formatted_traceback = traceback.format_exc()
+                if not self.target_umos:
+                    logger.warning("Error Notice: 未配置 'target_umo'，无法发送错误通知。")
+                    return
+                
+                try:
+                    # 捕获并格式化 traceback
+                    formatted_traceback = traceback.format_exc()
+                    max_traceback_length = 2000
+                    if len(formatted_traceback) > max_traceback_length:
+                        formatted_traceback = formatted_traceback[:max_traceback_length] + "\n... (Traceback truncated)"
 
-                            # Limit traceback length to prevent message from being too long. You can adjust the limit as needed.
-                            max_traceback_length = 2000
-                            if len(formatted_traceback) > max_traceback_length:
-                                formatted_traceback = formatted_traceback[:max_traceback_length] + "\n... (Traceback truncated)"
+                    # 构建消息
+                    base_message = f"主人，我在群聊 {group_name}（{chat_id}） 中和 [{user_name}] 聊天出现错误了: {message_str}" if chat_type == "群聊" else f"主人，我在和 {user_name}（{chat_id}） 私聊时出现错误了: {message_str}"
+                    full_message = f"{base_message}\n\n{formatted_traceback}"
+                    
+                    chain = MessageChain(chain=[Comp.Plain(full_message)])
 
-                            # Include group_name in the message
-                            await event.bot.send_private_msg(
-                                user_id=int(admin_id),
-                                message=f"主人，我在群聊 {group_name}（{chat_id}） 中和 [{user_name}] 聊天出现错误了: {message_str}" if chat_type == "群聊" else f"主人，我在和 {user_name}（{chat_id}） 私聊时出现错误了: {message_str}"
-                            )
+                    # 发送给所有目标
+                    for umo in self.target_umos:
+                        try:
+                            await self.context.send_message(umo, chain)
+                            logger.info(f"Error Notice: 错误通知已发送至 {umo}")
+                        except Exception as send_error:
+                            logger.error(f"Error Notice: 错误通知发送至 {umo} 失败: {send_error}", exc_info=True)
                 except Exception as e:
-                     logger.error(f"Error while sending message to admin: {e}")
+                     logger.error(f"Error Notice: 发送错误通知时发生未知错误: {e}", exc_info=True)
 
                 logger.info(f"拦截错误消息: {message_str}")
                 event.stop_event()  # 停止事件传播
